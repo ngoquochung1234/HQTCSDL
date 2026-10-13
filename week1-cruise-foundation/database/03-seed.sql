@@ -1,5 +1,5 @@
 :ON ERROR EXIT
-USE CruiseCoursework;
+USE CruiseWeek1;
 GO
 SET XACT_ABORT ON;
 BEGIN TRAN;
@@ -43,7 +43,4 @@ INSERT Policy VALUES(1,2);
 INSERT Notifications(CruiseId,Message) VALUES(1,N'Chào mừng bạn đến với Aurora. Hãy đăng ký hoạt động trước khi khởi hành.');
 COMMIT;
 GO
-EXEC usp_Register 1,2;
-EXEC usp_Register 2,4;
-EXEC usp_Register 3,1;
-GO
+-- Procedure đăng ký sẽ được bổ sung ở mốc nghiệp vụ tiếp theo.

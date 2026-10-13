@@ -1,7 +1,7 @@
 :ON ERROR EXIT
-IF DB_ID(N'CruiseCoursework') IS NULL CREATE DATABASE CruiseCoursework;
+IF DB_ID(N'CruiseWeek1') IS NULL CREATE DATABASE CruiseWeek1;
 GO
-USE CruiseCoursework;
+USE CruiseWeek1;
 GO
 SET XACT_ABORT ON;
 IF OBJECT_ID('dbo.Ships') IS NOT NULL THROW 51000, N'Database đã có bảng. Không chạy lại schema trên database đang dùng.', 1;
