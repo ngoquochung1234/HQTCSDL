@@ -1,61 +1,41 @@
-# Aurora Cruise - Week 1 Foundation
+# Aurora Cruise tuần 1
 
-This folder is the Week 1 baseline for the cruise activity and service management project.
+Mốc hiện tại: đăng nhập/đăng xuất, mật khẩu băm scrypt, phiên 8 giờ, 8 vai trò và API đọc dữ liệu theo chủ sở hữu. Chưa có API ghi đăng ký/check-in/POS/tài chính. Không phụ thuộc thư mục cruise-sql.
 
-## Week 1 scope
+## Chạy
 
-- Requirements and design documents
-- ERD and data dictionary
-- SQL Server schema and seed data
-- A small web/API shell for demonstrating the foundation
-
-Business procedures, full role workflows, POS synchronization, finance settlement,
-and operational dashboards remain in the later-week implementation in `cruise-sql`.
-
-## Folder structure
-
-```text
-database/
-  01-schema.sql       SQL Server tables, keys, constraints, indexes, audit triggers
-  03-seed.sql         Initial roles, packages, services, and demo data
-docs/
-  REQUIREMENTS.md     Functional and non-functional requirements
-  ERD.md              Entity relationship design
-  DICTIONARY.md       Data dictionary
-  DESIGN.md           Design decisions and scope
-public/
-  index.html          Week 1 foundation page
-  style.css           Responsive presentation styles
-server.mjs            Minimal Node.js static web/API shell
-package.json          Run commands
-```
-
-## Run the Week 1 web shell
-
-Requires Node.js 18 or newer:
+Cần Node.js từ 18, SQL Server và sqlcmd trong PATH. Mở terminal ở thư mục này:
 
 ```powershell
+npm run setup
 npm start
 ```
 
-Open <http://localhost:3000>.
+Mở http://localhost:3001 hoặc nhấp đúp CHAY-WEB.cmd. Database riêng CruiseWeek1; không dùng CruiseCoursework của bản đầy đủ. Nếu dùng SQLEXPRESS, đặt $env:SQL_SERVER = '.\SQLEXPRESS' trước setup/start. Có thể đổi SQL_DATABASE và PORT; giữ cùng cấu hình khi setup/server/test. Không có dependency bên ngoài hoặc bước build.
 
-The shell is intentionally independent of SQL Server so the Week 1 design can
-be reviewed before the later business procedures are installed.
+## Tài khoản
 
-## Install the database foundation
+Mật khẩu demo: Aurora123! Mỗi tài khoản được lưu hash với salt riêng.
 
-The SQL scripts use SQL Server/T-SQL and SQLCMD mode. In SSMS, enable **SQLCMD
-Mode**, then run:
+| Vai trò | Email |
+|---|---|
+| Hành khách | guest1@demo.local đến guest20@demo.local |
+| Điều phối | itinerary@demo.local |
+| Hoạt động | checkin@demo.local |
+| Tour bờ | shore@demo.local |
+| POS | pos@demo.local |
+| Tài chính | finance@demo.local |
+| Vận hành | operations@demo.local |
+| Quản trị | admin@demo.local |
 
-1. `database/01-schema.sql`
-2. `database/03-seed.sql`
+## SQL và kiểm tra
 
-The scripts create/use the `CruiseCoursework` database. Do not run the schema
-script again on a database that already has tables.
+Setup chạy 01-schema → 03-seed → 04-auth trên DB mới; lần sau giữ dữ liệu/mật khẩu hiện có. Seed không gọi usp_Register. Nếu dùng SSMS bật SQLCMD Mode. Sau khi chạy SQL bằng tay, chạy setup để cấp hash demo.
 
-## Source
+Chạy npm run check và npm run test:auth. Test dùng SQL Server thật, cổng tạm và một fixture tài khoản được dọn sau kiểm tra. Chi tiết API/quyền: docs/AUTH.md. Kết quả: docs/AUTH-TEST-RESULTS.md. ERD/DICTIONARY/DESIGN/REQUIREMENTS cũ mô tả thiết kế đích, chưa phải toàn bộ chức năng đã triển khai.
 
-This Week 1 folder is a reviewable subset of the complete implementation in
-`../cruise-sql`. It excludes `node_modules`, generated bundles, tests, and
-later-week business/API scripts.
+## Code cần push
+
+Push server.mjs, src, public, scripts, tests, database, docs, README.md, CHAY-WEB.cmd, package.json, package-lock.json và .gitignore. Không push .tmp, node_modules, .env hoặc log.
+
+Các API hiện có: POST /api/login, POST /api/logout, GET /api/me, GET /api/state, GET /api/bookings/:id, GET /api/departments/:role, GET /api/admin/users. Backend kiểm tra quyền dù client sửa URL/menu. Cookie HttpOnly và SameSite=Strict; restart server cần đăng nhập lại. Bản học phần chạy localhost.
