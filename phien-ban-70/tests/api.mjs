@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {query} from '../src/db.mjs';
+const base=process.env.TEST_URL||'http://localhost:3000';
+let count=0;
+async function call(url,body,cookie){const r=await fetch(base+url,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(cookie?{Cookie:cookie}:{})},body:body?JSON.stringify(body):undefined});return{status:r.status,data:r.headers.get('content-type')?.includes('json')?await r.json():await r.text(),cookie:r.headers.get('set-cookie')?.split(';')[0]};}
+const check=(name,fn)=>async()=>{await fn();count++;console.log('PASS '+name);};
+await check('Unauthenticated API blocked',async()=>assert.equal((await call('/api/state')).status,401))();
+await check('Wrong password blocked',async()=>assert.equal((await call('/api/login',{email:'guest1@demo.local',password:'wrong'})).status,401))();
+let guestCookie;
+await check('Guest login and Unicode name',async()=>{const r=await call('/api/login',{email:'guest1@demo.local',password:'Aurora123!'});assert.equal(r.status,200);guestCookie=r.cookie;assert.equal((await call('/api/me',null,guestCookie)).data.Name,'Nguyễn Minh Anh');})();
+await check('Guest sees only own bookings and no admin records',async()=>{const r=await call('/api/state',null,guestCookie);assert.equal(r.status,200);assert(r.data.guests.length>=1);assert(r.data.guests.every(g=>g.UserId===6));assert.equal(r.data.users.length,0);assert.equal(r.data.logs.length,0);assert(r.data.activities.some(a=>a.Name==='Yoga đón bình minh'));})();
+await check('Guest cannot act on another booking',async()=>assert.equal((await call('/api/action',{action:'register',bookingId:2,activityId:3},guestCookie)).status,403))();
+await check('Guest cannot settle finance account',async()=>assert.equal((await call('/api/action',{action:'settle',accountId:1},guestCookie)).status,403))();
+await check('Guest cannot create master data',async()=>assert.equal((await call('/api/action',{action:'save',entity:'port',data:{Name:'Unauthorized'}},guestCookie)).status,403))();
+await check('Own QR renders SVG',async()=>{const r=await call('/api/qr?booking=1',null,guestCookie);assert.equal(r.status,200);assert(r.data.includes('<svg'));})();
+await check('Another guest QR forbidden',async()=>assert.equal((await call('/api/qr?booking=2',null,guestCookie)).status,403))();
+await check('SQL duplicate error returned in Vietnamese',async()=>{const r=await call('/api/action',{action:'register',bookingId:1,activityId:2},guestCookie);assert.equal(r.status,400);assert(r.data.error.includes('Đã có đăng ký'));})();
+for(const email of ['admin','finance','operations'])await check('Disabled role '+email+' cannot log in',async()=>assert.equal((await call('/api/login',{email:email+'@demo.local',password:'Aurora123!'})).status,401))();
+for(const [email,role] of [['pos','POS'],['checkin','ACTIVITY'],['shore','SHORE'],['itinerary','ITINERARY']])await check('Assigned role '+role,async()=>{const r=await call('/api/login',{email:email+'@demo.local',password:'Aurora123!'});assert.equal(r.status,200);assert.deepEqual((await call('/api/me',null,r.cookie)).data.roles,[role]);const state=await call('/api/state',null,r.cookie);assert.equal(state.status,200);if(role==='POS')assert.equal(state.data.transactions.length,0);})();
+await check('Logout invalidates session',async()=>{await call('/api/logout',{},guestCookie);assert.equal((await call('/api/state',null,guestCookie)).status,401);})();
+console.log(JSON.stringify({tests:count,failures:0}));
