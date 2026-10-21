@@ -1,0 +1,15 @@
+{
+  "name": "aurora-cruise-week1-foundation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check src/db.mjs && node --check public/app.js && node --check scripts/setup.mjs",
+    "test:auth": "node tests/auth.mjs"
+  }
+}
